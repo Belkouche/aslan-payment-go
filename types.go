@@ -162,6 +162,35 @@ type CreateRefundParams struct {
 	IdempotencyKey string `json:"-"`
 }
 
+// UpdatePaymentLinkParams contains the parameters for updating a payment link.
+type UpdatePaymentLinkParams struct {
+	Description *string           `json:"description,omitempty"`
+	Status      *string           `json:"status,omitempty"`
+	MaxPayments *int              `json:"max_payments,omitempty"`
+	ExpiresAt   *string           `json:"expires_at,omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
+}
+
+// QRCodeResult contains the generated QR code data.
+type QRCodeResult struct {
+	DataURI  string `json:"data_uri"`
+	MimeType string `json:"mime_type"`
+}
+
+// QRCodeParams contains the query parameters for generating a QR code.
+type QRCodeParams struct {
+	Format string
+	Size   int
+}
+
+// ListRefundsParams contains the query parameters for listing refunds.
+type ListRefundsParams struct {
+	Page          *int    `json:"-"`
+	PageSize      *int    `json:"-"`
+	Status        *string `json:"-"`
+	TransactionID *string `json:"-"`
+}
+
 // WebhookEvent represents a parsed and verified webhook event.
 type WebhookEvent struct {
 	ID        string                 `json:"id"`

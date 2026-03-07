@@ -40,3 +40,35 @@ func (r *RefundsResource) Retrieve(ctx context.Context, id string) (*Refund, err
 	}
 	return &refund, nil
 }
+
+// List lists refunds with optional filters.
+func (r *RefundsResource) List(ctx context.Context, params *ListRefundsParams) (*PaginatedResponse[Refund], error) {
+	opts := r.client.requestOpts()
+	opts.method = "GET"
+	opts.path = "/api/v1/refunds"
+
+	if params != nil {
+		query := make(map[string]string)
+		if params.Page != nil {
+			query["page"] = intToString(params.Page)
+		}
+		if params.PageSize != nil {
+			query["page_size"] = intToString(params.PageSize)
+		}
+		if params.Status != nil {
+			query["status"] = *params.Status
+		}
+		if params.TransactionID != nil {
+			query["transaction_id"] = *params.TransactionID
+		}
+		if len(query) > 0 {
+			opts.query = query
+		}
+	}
+
+	var result PaginatedResponse[Refund]
+	if err := doRequest(ctx, opts, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
