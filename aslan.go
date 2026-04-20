@@ -37,6 +37,14 @@ type Client struct {
 	PaymentLinks *PaymentLinksResource
 	// Refunds provides access to refund operations.
 	Refunds *RefundsResource
+	// Vendors provides access to vendor/sub-merchant operations.
+	Vendors *VendorsResource
+	// Customers provides access to customer record operations.
+	Customers *CustomersResource
+	// ApiKeys provides access to API key management operations.
+	ApiKeys *ApiKeysResource
+	// WebhooksConfig provides access to webhook configuration operations.
+	WebhooksConfig *WebhooksConfigResource
 
 	secretKey  string
 	baseURL    string
@@ -94,6 +102,10 @@ func NewClient(secretKey string, opts ...Option) (*Client, error) {
 	c.Transactions = &TransactionsResource{client: c}
 	c.PaymentLinks = &PaymentLinksResource{client: c}
 	c.Refunds = &RefundsResource{client: c}
+	c.Vendors = &VendorsResource{client: c}
+	c.Customers = &CustomersResource{client: c}
+	c.ApiKeys = &ApiKeysResource{client: c}
+	c.WebhooksConfig = &WebhooksConfigResource{client: c}
 
 	return c, nil
 }

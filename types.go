@@ -2,14 +2,15 @@ package aslan
 
 // CheckoutSession represents a checkout session returned by the API.
 type CheckoutSession struct {
-	ID        string            `json:"id"`
-	Token     string            `json:"token"`
-	URL       string            `json:"url"`
-	ExpiresAt string            `json:"expires_at"`
-	Amount    int               `json:"amount"`
-	Currency  string            `json:"currency"`
-	Status    string            `json:"status"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	ID         string            `json:"id"`
+	Token      string            `json:"token"`
+	URL        string            `json:"url"`
+	ExpiresAt  string            `json:"expires_at"`
+	Amount     int               `json:"amount"`
+	Currency   string            `json:"currency"`
+	Status     string            `json:"status"`
+	OpenAmount bool              `json:"openAmount"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
 }
 
 // CreateCheckoutSessionParams contains the parameters for creating a checkout session.
@@ -20,18 +21,22 @@ type CreateCheckoutSessionParams struct {
 	// Redirect URL on successful payment (must be HTTPS)
 	SuccessURL string `json:"success_url"`
 	// Redirect URL on cancellation (must be HTTPS)
-	CancelURL       string           `json:"cancel_url"`
-	Customer        *Customer        `json:"customer,omitempty"`
-	BillingAddress  *Address         `json:"billing_address,omitempty"`
+	CancelURL       string            `json:"cancel_url"`
+	Customer        *SessionCustomer  `json:"customer,omitempty"`
+	BillingAddress  *Address          `json:"billing_address,omitempty"`
 	ShippingAddress *ShippingAddress  `json:"shipping_address,omitempty"`
-	LineItems       []LineItem       `json:"line_items,omitempty"`
+	LineItems       []LineItem        `json:"line_items,omitempty"`
 	Metadata        map[string]string `json:"metadata,omitempty"`
+	Sellers         []Seller          `json:"sellers,omitempty"`
+	BrowserInfo     *BrowserInfo      `json:"browserInfo,omitempty"`
+	Require3DS      *bool             `json:"require3DS,omitempty"`
+	VendorID        *string           `json:"vendorId,omitempty"`
 	// IdempotencyKey is sent as the Idempotency-Key header if set.
 	IdempotencyKey string `json:"-"`
 }
 
-// Customer contains optional customer information for a checkout session.
-type Customer struct {
+// SessionCustomer contains optional customer information for a checkout session.
+type SessionCustomer struct {
 	Email            string `json:"email,omitempty"`
 	Name             string `json:"name,omitempty"`
 	Phone            string `json:"phone,omitempty"`
@@ -78,7 +83,7 @@ type Transaction struct {
 	CreatedAt         string            `json:"created_at"`
 	UpdatedAt         string            `json:"updated_at"`
 	Metadata          map[string]string `json:"metadata,omitempty"`
-	Customer          *Customer         `json:"customer,omitempty"`
+	Customer          *SessionCustomer  `json:"customer,omitempty"`
 }
 
 // ListTransactionsParams contains the query parameters for listing transactions.
@@ -123,13 +128,16 @@ type PaymentLink struct {
 
 // CreatePaymentLinkParams contains the parameters for creating a payment link.
 type CreatePaymentLinkParams struct {
-	// Amount in centimes
-	Amount      int               `json:"amount"`
+	// Amount in centimes. Nullable for open-amount links.
+	Amount      *int              `json:"amount,omitempty"`
 	Currency    string            `json:"currency,omitempty"`
 	Description *string           `json:"description,omitempty"`
 	MaxPayments *int              `json:"max_payments,omitempty"`
 	ExpiresAt   *string           `json:"expires_at,omitempty"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
+	MinAmount   *int              `json:"minAmount,omitempty"`
+	MaxAmount   *int              `json:"maxAmount,omitempty"`
+	VendorID    *string           `json:"vendorId,omitempty"`
 	// IdempotencyKey is sent as the Idempotency-Key header if set.
 	IdempotencyKey string `json:"-"`
 }
@@ -199,6 +207,129 @@ type WebhookEvent struct {
 	CreatedAt string                 `json:"created_at"`
 }
 
+// Seller represents a seller/sub-merchant in a split-payment checkout session.
+type Seller struct {
+	ID             string            `json:"id"`
+	Name           string            `json:"name"`
+	Email          string            `json:"email,omitempty"`
+	CommissionRate *int              `json:"commissionRate,omitempty"` // basis points 0-10000
+	FixedFee       *int              `json:"fixedFee,omitempty"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
+}
+
+// BrowserInfo contains browser environment data used for 3DS challenge flows.
+type BrowserInfo struct {
+	UserAgent    string `json:"userAgent,omitempty"`
+	JavaEnabled  *bool  `json:"javaEnabled,omitempty"`
+	ColorDepth   *int   `json:"colorDepth,omitempty"`
+	ScreenHeight *int   `json:"screenHeight,omitempty"`
+	ScreenWidth  *int   `json:"screenWidth,omitempty"`
+	Language     string `json:"language,omitempty"`
+	IPAddress    string `json:"ipAddress,omitempty"`
+}
+
+// Vendor represents a vendor/sub-merchant account.
+type Vendor struct {
+	ID             string            `json:"id"`
+	ExternalID     *string           `json:"externalId"`
+	Name           string            `json:"name"`
+	Email          *string           `json:"email"`
+	CommissionRate *float64          `json:"commissionRate"`
+	IsActive       bool              `json:"isActive"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
+	CreatedAt      string            `json:"created_at"`
+	UpdatedAt      string            `json:"updated_at"`
+}
+
+// CreateVendorParams contains the parameters for creating a vendor.
+type CreateVendorParams struct {
+	Name           string            `json:"name"`
+	ExternalID     *string           `json:"externalId,omitempty"`
+	Email          *string           `json:"email,omitempty"`
+	CommissionRate *float64          `json:"commissionRate,omitempty"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
+	// IdempotencyKey is sent as the Idempotency-Key header if set.
+	IdempotencyKey string `json:"-"`
+}
+
+// UpdateVendorParams contains the parameters for updating a vendor.
+type UpdateVendorParams struct {
+	Name           *string           `json:"name,omitempty"`
+	Email          *string           `json:"email,omitempty"`
+	CommissionRate *float64          `json:"commissionRate,omitempty"`
+	ExternalID     *string           `json:"externalId,omitempty"`
+	IsActive       *bool             `json:"isActive,omitempty"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
+}
+
+// ListVendorsParams contains the query parameters for listing vendors.
+type ListVendorsParams struct {
+	Page     *int
+	Limit    *int
+	Search   *string
+	IsActive *bool
+}
+
+// VendorListResponse contains a paginated list of vendors.
+type VendorListResponse struct {
+	Data       []Vendor `json:"data"`
+	Total      int      `json:"total"`
+	Page       int      `json:"page"`
+	Limit      int      `json:"limit"`
+	TotalPages int      `json:"totalPages"`
+}
+
+// Customer represents a payment customer record.
+type Customer struct {
+	ID               string  `json:"id"`
+	Email            *string `json:"email"`
+	Name             *string `json:"name"`
+	Phone            *string `json:"phone"`
+	CreatedAt        string  `json:"created_at"`
+	TransactionCount int     `json:"transactionCount"`
+	TotalSpent       int     `json:"totalSpent"`
+}
+
+// ListCustomersParams contains the query parameters for listing customers.
+type ListCustomersParams struct {
+	Page      *int
+	PageSize  *int
+	Search    *string
+	SortBy    *string
+	SortOrder *string
+}
+
+// ApiKey represents an API key for a merchant.
+type ApiKey struct {
+	ID             string  `json:"id"`
+	Name           string  `json:"name"`
+	Type           string  `json:"type"`
+	Prefix         string  `json:"prefix"`
+	PublishableKey string  `json:"publishableKey"`
+	SecretKey      *string `json:"secretKey,omitempty"` // Only returned on creation
+	CreatedAt      string  `json:"createdAt"`
+}
+
+// CreateApiKeyParams contains the parameters for creating an API key.
+type CreateApiKeyParams struct {
+	Name string `json:"name"`
+	// Type is "live" or "test".
+	Type string `json:"type"`
+}
+
+// WebhookConfig represents the webhook delivery configuration for a merchant.
+type WebhookConfig struct {
+	URL    string   `json:"url"`
+	Secret string   `json:"secret"`
+	Events []string `json:"events"`
+}
+
+// UpdateWebhookConfigParams contains the parameters for updating webhook configuration.
+type UpdateWebhookConfigParams struct {
+	URL    string   `json:"url"`
+	Events []string `json:"events,omitempty"`
+}
+
 // Int returns a pointer to the given int value.
 func Int(v int) *int {
 	return &v
@@ -206,5 +337,15 @@ func Int(v int) *int {
 
 // String returns a pointer to the given string value.
 func String(v string) *string {
+	return &v
+}
+
+// Bool returns a pointer to the given bool value.
+func Bool(v bool) *bool {
+	return &v
+}
+
+// Float64 returns a pointer to the given float64 value.
+func Float64(v float64) *float64 {
 	return &v
 }
