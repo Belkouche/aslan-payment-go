@@ -205,6 +205,22 @@ if err != nil {
 | `IDEMPOTENCY_ERROR` | Idempotency key conflict |
 | `NETWORK_ERROR` | Network or timeout error |
 | `SERVER_ERROR` | Server-side error (5xx) |
+| `PROVIDER_ACCOUNT_NOT_FOUND` | `ProviderAccount` names no account of your merchant |
+| `PROVIDER_ACCOUNT_INACTIVE` | The `ProviderAccount` is deactivated |
+| `PROVIDER_ACCOUNT_UNSUPPORTED` | The account's provider cannot take this request |
+| `PROVIDER_ACCOUNT_RECURRING_DISABLED` | The account does not allow recurring payments |
+
+### Provider accounts
+
+To process on one of your additional PSP accounts, set `ProviderAccount` (its alias) on `CreateCheckoutSessionParams` or `CreatePaymentLinkParams`; omit it or use `"default"` for the default account. Responses carry `ProviderAccount` too.
+
+```go
+alias := "foreign"
+session, err := client.CheckoutSessions.Create(ctx, &aslan.CreateCheckoutSessionParams{
+    Amount: 10000, SuccessURL: "https://yoursite.ma/success", CancelURL: "https://yoursite.ma/cancel",
+    ProviderAccount: &alias,
+})
+```
 
 ## Context Support
 

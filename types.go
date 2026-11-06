@@ -1,16 +1,20 @@
 package aslan
 
+import "encoding/json"
+
 // CheckoutSession represents a checkout session returned by the API.
 type CheckoutSession struct {
-	ID         string            `json:"id"`
-	Token      string            `json:"token"`
-	URL        string            `json:"url"`
-	ExpiresAt  string            `json:"expires_at"`
-	Amount     int               `json:"amount"`
-	Currency   string            `json:"currency"`
-	Status     string            `json:"status"`
-	OpenAmount bool              `json:"openAmount"`
-	Metadata   map[string]string `json:"metadata,omitempty"`
+	ID         string   `json:"id"`
+	Token      string   `json:"token"`
+	URL        string   `json:"url"`
+	ExpiresAt  string   `json:"expiresAt"`
+	Amount     int      `json:"amount"`
+	Currency   string   `json:"currency"`
+	Status     string   `json:"status"`
+	OpenAmount bool     `json:"openAmount"`
+	Metadata   Metadata `json:"metadata,omitempty"`
+	// ProviderAccount is "default", or the alias of the PSP account this session is pinned to.
+	ProviderAccount string `json:"providerAccount,omitempty"`
 }
 
 // CreateCheckoutSessionParams contains the parameters for creating a checkout session.
@@ -19,18 +23,21 @@ type CreateCheckoutSessionParams struct {
 	Amount   int    `json:"amount"`
 	Currency string `json:"currency,omitempty"`
 	// Redirect URL on successful payment (must be HTTPS)
-	SuccessURL string `json:"success_url"`
+	SuccessURL string `json:"successUrl"`
 	// Redirect URL on cancellation (must be HTTPS)
-	CancelURL       string            `json:"cancel_url"`
+	CancelURL       string            `json:"cancelUrl"`
 	Customer        *SessionCustomer  `json:"customer,omitempty"`
-	BillingAddress  *Address          `json:"billing_address,omitempty"`
-	ShippingAddress *ShippingAddress  `json:"shipping_address,omitempty"`
-	LineItems       []LineItem        `json:"line_items,omitempty"`
+	BillingAddress  *Address          `json:"billingAddress,omitempty"`
+	ShippingAddress *ShippingAddress  `json:"shippingAddress,omitempty"`
+	LineItems       []LineItem        `json:"lineItems,omitempty"`
 	Metadata        map[string]string `json:"metadata,omitempty"`
 	Sellers         []Seller          `json:"sellers,omitempty"`
 	BrowserInfo     *BrowserInfo      `json:"browserInfo,omitempty"`
-	Require3DS      *bool             `json:"require3DS,omitempty"`
+	Require3DS      *bool             `json:"require3ds,omitempty"`
 	VendorID        *string           `json:"vendorId,omitempty"`
+	// ProviderAccount is the alias of an additional PSP account (^[a-z0-9][a-z0-9-]{0,31}$).
+	// Omit or use "default" for the default account.
+	ProviderAccount *string `json:"providerAccount,omitempty"`
 	// IdempotencyKey is sent as the Idempotency-Key header if set.
 	IdempotencyKey string `json:"-"`
 }
@@ -40,14 +47,14 @@ type SessionCustomer struct {
 	Email            string `json:"email,omitempty"`
 	Name             string `json:"name,omitempty"`
 	Phone            string `json:"phone,omitempty"`
-	PhoneCountryCode string `json:"phone_country_code,omitempty"`
+	PhoneCountryCode string `json:"phoneCountryCode,omitempty"`
 }
 
 // Address represents a billing or base address.
 type Address struct {
 	Line1      string `json:"line1,omitempty"`
 	City       string `json:"city,omitempty"`
-	PostalCode string `json:"postal_code,omitempty"`
+	PostalCode string `json:"postalCode,omitempty"`
 	State      string `json:"state,omitempty"`
 	// Country is an ISO 3166-1 alpha-2 country code.
 	Country string `json:"country,omitempty"`
@@ -56,34 +63,36 @@ type Address struct {
 // ShippingAddress extends Address with a recipient name.
 type ShippingAddress struct {
 	Address
-	RecipientName string `json:"recipient_name,omitempty"`
+	RecipientName string `json:"recipientName,omitempty"`
 }
 
 // LineItem represents a single item in a checkout session.
 type LineItem struct {
-	Name      string `json:"name"`
-	Quantity  int    `json:"quantity"`
-	UnitPrice int    `json:"unit_price"`
+	Name        string `json:"name"`
+	Quantity    int    `json:"quantity"`
+	UnitPrice   int    `json:"unitPrice"`
 	Description string `json:"description,omitempty"`
-	SKU       string `json:"sku,omitempty"`
-	ImageURL  string `json:"image_url,omitempty"`
-	Category  string `json:"category,omitempty"`
-	SellerID  string `json:"seller_id,omitempty"`
+	SKU         string `json:"sku,omitempty"`
+	ImageURL    string `json:"imageUrl,omitempty"`
+	Category    string `json:"category,omitempty"`
+	SellerID    string `json:"sellerId,omitempty"`
 }
 
 // Transaction represents a payment transaction.
 type Transaction struct {
-	ID                string            `json:"id"`
-	Amount            int               `json:"amount"`
-	Currency          string            `json:"currency"`
-	Status            string            `json:"status"`
-	MerchantID        string            `json:"merchant_id"`
-	CheckoutSessionID string            `json:"checkout_session_id,omitempty"`
-	PaidAt            string            `json:"paid_at,omitempty"`
-	CreatedAt         string            `json:"created_at"`
-	UpdatedAt         string            `json:"updated_at"`
-	Metadata          map[string]string `json:"metadata,omitempty"`
-	Customer          *SessionCustomer  `json:"customer,omitempty"`
+	ID                string           `json:"id"`
+	Amount            int              `json:"amount"`
+	Currency          string           `json:"currency"`
+	Status            string           `json:"status"`
+	MerchantID        string           `json:"merchantId"`
+	CheckoutSessionID string           `json:"checkoutSessionId,omitempty"`
+	PaidAt            string           `json:"paidAt,omitempty"`
+	CreatedAt         string           `json:"createdAt"`
+	UpdatedAt         string           `json:"updatedAt"`
+	Metadata          Metadata         `json:"metadata,omitempty"`
+	Customer          *SessionCustomer `json:"customer,omitempty"`
+	// ProviderAccount is "default", or the alias of the PSP account that processed this payment.
+	ProviderAccount string `json:"providerAccount,omitempty"`
 }
 
 // ListTransactionsParams contains the query parameters for listing transactions.
@@ -106,24 +115,26 @@ type PaginatedResponse[T any] struct {
 // Pagination contains pagination metadata.
 type Pagination struct {
 	Page       int `json:"page"`
-	PageSize   int `json:"page_size"`
+	PageSize   int `json:"pageSize"`
 	Total      int `json:"total"`
-	TotalPages int `json:"total_pages"`
+	TotalPages int `json:"totalPages"`
 }
 
 // PaymentLink represents a reusable payment link.
 type PaymentLink struct {
-	ID           string            `json:"id"`
-	URL          string            `json:"url"`
-	Amount       int               `json:"amount"`
-	Currency     string            `json:"currency"`
-	Description  string            `json:"description,omitempty"`
-	Status       string            `json:"status"`
-	MaxPayments  *int              `json:"max_payments,omitempty"`
-	PaymentCount int               `json:"payment_count"`
-	ExpiresAt    string            `json:"expires_at,omitempty"`
-	CreatedAt    string            `json:"created_at"`
-	Metadata     map[string]string `json:"metadata,omitempty"`
+	ID           string   `json:"id"`
+	URL          string   `json:"url"`
+	Amount       int      `json:"amount"`
+	Currency     string   `json:"currency"`
+	Description  string   `json:"description,omitempty"`
+	Status       string   `json:"status"`
+	MaxPayments  *int     `json:"maxPayments,omitempty"`
+	PaymentCount int      `json:"paymentCount"`
+	ExpiresAt    string   `json:"expiresAt,omitempty"`
+	CreatedAt    string   `json:"createdAt"`
+	Metadata     Metadata `json:"metadata,omitempty"`
+	// ProviderAccount is "default", or the alias of the PSP account used for this link's payments.
+	ProviderAccount string `json:"providerAccount,omitempty"`
 }
 
 // CreatePaymentLinkParams contains the parameters for creating a payment link.
@@ -132,12 +143,14 @@ type CreatePaymentLinkParams struct {
 	Amount      *int              `json:"amount,omitempty"`
 	Currency    string            `json:"currency,omitempty"`
 	Description *string           `json:"description,omitempty"`
-	MaxPayments *int              `json:"max_payments,omitempty"`
-	ExpiresAt   *string           `json:"expires_at,omitempty"`
+	MaxPayments *int              `json:"maxPayments,omitempty"`
+	ExpiresAt   *string           `json:"expiresAt,omitempty"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
 	MinAmount   *int              `json:"minAmount,omitempty"`
 	MaxAmount   *int              `json:"maxAmount,omitempty"`
 	VendorID    *string           `json:"vendorId,omitempty"`
+	// ProviderAccount is the alias of an additional PSP account. Omit or use "default" for the default account.
+	ProviderAccount *string `json:"providerAccount,omitempty"`
 	// IdempotencyKey is sent as the Idempotency-Key header if set.
 	IdempotencyKey string `json:"-"`
 }
@@ -152,17 +165,17 @@ type ListPaymentLinksParams struct {
 // Refund represents a refund on a transaction.
 type Refund struct {
 	ID            string `json:"id"`
-	TransactionID string `json:"transaction_id"`
+	TransactionID string `json:"transactionId"`
 	Amount        int    `json:"amount"`
 	Currency      string `json:"currency"`
 	Status        string `json:"status"`
 	Reason        string `json:"reason,omitempty"`
-	CreatedAt     string `json:"created_at"`
+	CreatedAt     string `json:"createdAt"`
 }
 
 // CreateRefundParams contains the parameters for creating a refund.
 type CreateRefundParams struct {
-	TransactionID string `json:"transaction_id"`
+	TransactionID string `json:"transactionId"`
 	// Refund amount in centimes
 	Amount int    `json:"amount"`
 	Reason string `json:"reason,omitempty"`
@@ -174,15 +187,15 @@ type CreateRefundParams struct {
 type UpdatePaymentLinkParams struct {
 	Description *string           `json:"description,omitempty"`
 	Status      *string           `json:"status,omitempty"`
-	MaxPayments *int              `json:"max_payments,omitempty"`
-	ExpiresAt   *string           `json:"expires_at,omitempty"`
+	MaxPayments *int              `json:"maxPayments,omitempty"`
+	ExpiresAt   *string           `json:"expiresAt,omitempty"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 // QRCodeResult contains the generated QR code data.
 type QRCodeResult struct {
-	DataURI  string `json:"data_uri"`
-	MimeType string `json:"mime_type"`
+	DataURI  string `json:"dataUri"`
+	MimeType string `json:"mimeType"`
 }
 
 // QRCodeParams contains the query parameters for generating a QR code.
@@ -202,9 +215,9 @@ type ListRefundsParams struct {
 // WebhookEvent represents a parsed and verified webhook event.
 type WebhookEvent struct {
 	ID        string                 `json:"id"`
-	Type      string                 `json:"type"`
+	Type      string                 `json:"event"`
 	Data      map[string]interface{} `json:"data"`
-	CreatedAt string                 `json:"created_at"`
+	CreatedAt string                 `json:"createdAt"`
 }
 
 // Seller represents a seller/sub-merchant in a split-payment checkout session.
@@ -237,8 +250,8 @@ type Vendor struct {
 	CommissionRate *float64          `json:"commissionRate"`
 	IsActive       bool              `json:"isActive"`
 	Metadata       map[string]string `json:"metadata,omitempty"`
-	CreatedAt      string            `json:"created_at"`
-	UpdatedAt      string            `json:"updated_at"`
+	CreatedAt      string            `json:"createdAt"`
+	UpdatedAt      string            `json:"updatedAt"`
 }
 
 // CreateVendorParams contains the parameters for creating a vendor.
@@ -285,7 +298,7 @@ type Customer struct {
 	Email            *string `json:"email"`
 	Name             *string `json:"name"`
 	Phone            *string `json:"phone"`
-	CreatedAt        string  `json:"created_at"`
+	CreatedAt        string  `json:"createdAt"`
 	TransactionCount int     `json:"transactionCount"`
 	TotalSpent       int     `json:"totalSpent"`
 }
@@ -328,6 +341,34 @@ type WebhookConfig struct {
 type UpdateWebhookConfigParams struct {
 	URL    string   `json:"url"`
 	Events []string `json:"events,omitempty"`
+}
+
+// Metadata is a string map decoded leniently: non-string values the API may return
+// (e.g. internal boolean markers on transactions) are kept as their raw JSON text
+// instead of failing the whole response decode.
+type Metadata map[string]string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (m *Metadata) UnmarshalJSON(b []byte) error {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if raw == nil {
+		*m = nil
+		return nil
+	}
+	out := make(Metadata, len(raw))
+	for k, v := range raw {
+		var s string
+		if err := json.Unmarshal(v, &s); err == nil {
+			out[k] = s
+		} else {
+			out[k] = string(v)
+		}
+	}
+	*m = out
+	return nil
 }
 
 // Int returns a pointer to the given int value.

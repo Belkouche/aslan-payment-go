@@ -16,6 +16,7 @@ func (r *VendorsResource) Create(ctx context.Context, params *CreateVendorParams
 	opts := r.client.requestOpts()
 	opts.method = "POST"
 	opts.path = "/api/v1/vendors"
+	opts.unwrapData = true
 	opts.body = params
 
 	if params.IdempotencyKey != "" {
@@ -34,6 +35,7 @@ func (r *VendorsResource) Retrieve(ctx context.Context, id string) (*Vendor, err
 	opts := r.client.requestOpts()
 	opts.method = "GET"
 	opts.path = "/api/v1/vendors/" + url.PathEscape(id)
+	opts.unwrapData = true
 
 	var vendor Vendor
 	if err := doRequest(ctx, opts, &vendor); err != nil {
@@ -79,6 +81,7 @@ func (r *VendorsResource) Update(ctx context.Context, id string, params *UpdateV
 	opts := r.client.requestOpts()
 	opts.method = "PATCH"
 	opts.path = "/api/v1/vendors/" + url.PathEscape(id)
+	opts.unwrapData = true
 	opts.body = params
 
 	var vendor Vendor
@@ -93,6 +96,7 @@ func (r *VendorsResource) Delete(ctx context.Context, id string) (*Vendor, error
 	opts := r.client.requestOpts()
 	opts.method = "DELETE"
 	opts.path = "/api/v1/vendors/" + url.PathEscape(id)
+	opts.unwrapData = true
 
 	var vendor Vendor
 	if err := doRequest(ctx, opts, &vendor); err != nil {

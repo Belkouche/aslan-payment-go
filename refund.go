@@ -15,6 +15,7 @@ func (r *RefundsResource) Create(ctx context.Context, params *CreateRefundParams
 	opts := r.client.requestOpts()
 	opts.method = "POST"
 	opts.path = "/api/v1/refunds"
+	opts.unwrapData = true
 	opts.body = params
 
 	if params.IdempotencyKey != "" {
@@ -33,6 +34,7 @@ func (r *RefundsResource) Retrieve(ctx context.Context, id string) (*Refund, err
 	opts := r.client.requestOpts()
 	opts.method = "GET"
 	opts.path = "/api/v1/refunds/" + url.PathEscape(id)
+	opts.unwrapData = true
 
 	var refund Refund
 	if err := doRequest(ctx, opts, &refund); err != nil {
@@ -53,13 +55,13 @@ func (r *RefundsResource) List(ctx context.Context, params *ListRefundsParams) (
 			query["page"] = intToString(params.Page)
 		}
 		if params.PageSize != nil {
-			query["page_size"] = intToString(params.PageSize)
+			query["pageSize"] = intToString(params.PageSize)
 		}
 		if params.Status != nil {
 			query["status"] = *params.Status
 		}
 		if params.TransactionID != nil {
-			query["transaction_id"] = *params.TransactionID
+			query["transactionId"] = *params.TransactionID
 		}
 		if len(query) > 0 {
 			opts.query = query

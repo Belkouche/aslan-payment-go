@@ -14,6 +14,7 @@ func (r *WebhooksConfigResource) Update(ctx context.Context, params *UpdateWebho
 	opts := r.client.requestOpts()
 	opts.method = "POST"
 	opts.path = "/api/v1/webhooks/config"
+	opts.unwrapData = true
 	opts.body = params
 
 	var config WebhookConfig
@@ -28,6 +29,7 @@ func (r *WebhooksConfigResource) Retrieve(ctx context.Context) (*WebhookConfig, 
 	opts := r.client.requestOpts()
 	opts.method = "GET"
 	opts.path = "/api/v1/webhooks/config"
+	opts.unwrapData = true
 
 	var config WebhookConfig
 	if err := doRequest(ctx, opts, &config); err != nil {

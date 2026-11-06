@@ -17,6 +17,7 @@ func (r *ApiKeysResource) Create(ctx context.Context, params *CreateApiKeyParams
 	opts := r.client.requestOpts()
 	opts.method = "POST"
 	opts.path = "/api/v1/api-keys"
+	opts.unwrapData = true
 	opts.body = params
 
 	var apiKey ApiKey
@@ -31,6 +32,7 @@ func (r *ApiKeysResource) List(ctx context.Context) ([]ApiKey, error) {
 	opts := r.client.requestOpts()
 	opts.method = "GET"
 	opts.path = "/api/v1/api-keys"
+	opts.unwrapData = true
 
 	var apiKeys []ApiKey
 	if err := doRequest(ctx, opts, &apiKeys); err != nil {

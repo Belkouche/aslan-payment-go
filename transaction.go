@@ -15,6 +15,7 @@ func (r *TransactionsResource) Retrieve(ctx context.Context, id string) (*Transa
 	opts := r.client.requestOpts()
 	opts.method = "GET"
 	opts.path = "/api/v1/transactions/" + url.PathEscape(id)
+	opts.unwrapData = true
 
 	var txn Transaction
 	if err := doRequest(ctx, opts, &txn); err != nil {
@@ -35,7 +36,7 @@ func (r *TransactionsResource) List(ctx context.Context, params *ListTransaction
 			query["page"] = intToString(params.Page)
 		}
 		if params.PageSize != nil {
-			query["page_size"] = intToString(params.PageSize)
+			query["pageSize"] = intToString(params.PageSize)
 		}
 		if params.Status != nil {
 			query["status"] = *params.Status
@@ -47,10 +48,10 @@ func (r *TransactionsResource) List(ctx context.Context, params *ListTransaction
 			query["to"] = *params.To
 		}
 		if params.SortBy != nil {
-			query["sort_by"] = *params.SortBy
+			query["sortBy"] = *params.SortBy
 		}
 		if params.SortOrder != nil {
-			query["sort_order"] = *params.SortOrder
+			query["sortOrder"] = *params.SortOrder
 		}
 		if len(query) > 0 {
 			opts.query = query
