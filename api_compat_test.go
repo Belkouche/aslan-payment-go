@@ -2,6 +2,7 @@ package aslan
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
@@ -241,5 +242,60 @@ func TestWebhookEventFields(t *testing.T) {
 	}
 	if ev.Type != "payment.succeeded" || ev.CreatedAt != "c" || ev.Data["transaction"] == nil {
 		t.Errorf("unexpected event: %+v", ev)
+	}
+}
+
+func newRawServer(t *testing.T, status int, contentType string, body []byte) (*Client, *capturedRequest) {
+	t.Helper()
+	got := &capturedRequest{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got.path = r.URL.Path
+		got.query = r.URL.Query()
+		w.Header().Set("Content-Type", contentType)
+		w.WriteHeader(status)
+		_, _ = w.Write(body)
+	}))
+	t.Cleanup(srv.Close)
+	c, err := NewClient("sk_test_x", WithBaseURL(srv.URL), WithMaxRetries(0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c, got
+}
+
+func TestPaymentLinkQRRawFormats(t *testing.T) {
+	png := []byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0xff}
+	svg := []byte(`<svg xmlns="http://www.w3.org/2000/svg"></svg>`)
+	cases := []struct {
+		format, contentType, wantMime string
+		body                          []byte
+	}{
+		{"png", "image/png", "image/png", png},
+		{"svg", "image/svg+xml; charset=utf-8", "image/svg+xml", svg},
+	}
+	for _, tc := range cases {
+		t.Run(tc.format, func(t *testing.T) {
+			c, got := newRawServer(t, 200, tc.contentType, tc.body)
+			qr, err := c.PaymentLinks.GetQR(context.Background(), "pl_1", &QRCodeParams{Format: tc.format, Size: 300})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.path != "/api/v1/payment-links/pl_1/qr" || got.query.Get("format") != tc.format || got.query.Get("size") != "300" {
+				t.Errorf("unexpected request: %s %v", got.path, got.query)
+			}
+			want := "data:" + tc.wantMime + ";base64," + base64.StdEncoding.EncodeToString(tc.body)
+			if qr.MimeType != tc.wantMime || qr.DataURI != want {
+				t.Errorf("got %+v, want DataURI %q", qr, want)
+			}
+		})
+	}
+}
+
+func TestPaymentLinkQRRawFormatError(t *testing.T) {
+	c, _ := newRawServer(t, 404, "application/json", []byte(`{"statusCode":404,"code":"NOT_FOUND","error":"Not Found","message":"PaymentLink 'pl_x' not found"}`))
+	_, err := c.PaymentLinks.GetQR(context.Background(), "pl_x", &QRCodeParams{Format: "png"})
+	ae := asAslanError(t, err)
+	if ae.Code != ErrNotFound || ae.Message != "PaymentLink 'pl_x' not found" {
+		t.Errorf("unexpected error: %+v", ae)
 	}
 }

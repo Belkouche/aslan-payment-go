@@ -40,6 +40,12 @@ type requestOptions struct {
 	unwrapData bool
 }
 
+// rawBody receives an undecoded success response (pass it as the result of doRequest).
+type rawBody struct {
+	Body        []byte
+	ContentType string
+}
+
 // parseAPIError extracts code, message and details from an error response body.
 // It accepts the flat shape { statusCode, code, error, message, details } and the
 // nested shape { error: { code, message, details } }.
@@ -194,6 +200,12 @@ func doRequest(ctx context.Context, opts requestOptions, result interface{}) err
 		}
 
 		// Parse success response
+		if raw, ok := result.(*rawBody); ok {
+			raw.Body = respBody
+			raw.ContentType = resp.Header.Get("Content-Type")
+			return nil
+		}
+
 		if result != nil {
 			payload := respBody
 			if opts.unwrapData {

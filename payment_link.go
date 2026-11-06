@@ -2,7 +2,9 @@ package aslan
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"mime"
 	"net/url"
 )
 
@@ -115,6 +117,25 @@ func (r *PaymentLinksResource) GetQR(ctx context.Context, id string, params *QRC
 		if len(query) > 0 {
 			opts.query = query
 		}
+	}
+
+	// With an explicit format the API returns the raw image instead of JSON.
+	if params != nil && params.Format != "" {
+		opts.unwrapData = false
+		var raw rawBody
+		if err := doRequest(ctx, opts, &raw); err != nil {
+			return nil, err
+		}
+		mimeType := raw.ContentType
+		if mt, _, err := mime.ParseMediaType(mimeType); err == nil {
+			mimeType = mt
+		} else {
+			mimeType = "application/octet-stream"
+		}
+		return &QRCodeResult{
+			DataURI:  "data:" + mimeType + ";base64," + base64.StdEncoding.EncodeToString(raw.Body),
+			MimeType: mimeType,
+		}, nil
 	}
 
 	var qr QRCodeResult
