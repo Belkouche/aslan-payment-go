@@ -12,6 +12,12 @@ const (
 	ErrIdempotency    = "IDEMPOTENCY_ERROR"
 	ErrNetwork        = "NETWORK_ERROR"
 	ErrServer         = "SERVER_ERROR"
+
+	// Provider account errors (HTTP 400), returned when a providerAccount alias is rejected.
+	ErrProviderAccountNotFound          = "PROVIDER_ACCOUNT_NOT_FOUND"
+	ErrProviderAccountInactive          = "PROVIDER_ACCOUNT_INACTIVE"
+	ErrProviderAccountUnsupported       = "PROVIDER_ACCOUNT_UNSUPPORTED"
+	ErrProviderAccountRecurringDisabled = "PROVIDER_ACCOUNT_RECURRING_DISABLED"
 )
 
 // AslanError represents an error returned by the Aslan Payment API.
@@ -40,6 +46,10 @@ func mapErrorCode(status int, serverCode string) string {
 	}
 	if serverCode == ErrIdempotency {
 		return ErrIdempotency
+	}
+	switch serverCode {
+	case ErrProviderAccountNotFound, ErrProviderAccountInactive, ErrProviderAccountUnsupported, ErrProviderAccountRecurringDisabled:
+		return serverCode
 	}
 	switch status {
 	case 401:

@@ -11,6 +11,8 @@ type CheckoutSession struct {
 	Status     string            `json:"status"`
 	OpenAmount bool              `json:"openAmount"`
 	Metadata   map[string]string `json:"metadata,omitempty"`
+	// ProviderAccount is "default", or the alias of the PSP account this session is pinned to.
+	ProviderAccount string `json:"providerAccount,omitempty"`
 }
 
 // CreateCheckoutSessionParams contains the parameters for creating a checkout session.
@@ -31,6 +33,9 @@ type CreateCheckoutSessionParams struct {
 	BrowserInfo     *BrowserInfo      `json:"browserInfo,omitempty"`
 	Require3DS      *bool             `json:"require3DS,omitempty"`
 	VendorID        *string           `json:"vendorId,omitempty"`
+	// ProviderAccount is the alias of an additional PSP account (^[a-z0-9][a-z0-9-]{0,31}$).
+	// Omit or use "default" for the default account.
+	ProviderAccount *string `json:"providerAccount,omitempty"`
 	// IdempotencyKey is sent as the Idempotency-Key header if set.
 	IdempotencyKey string `json:"-"`
 }
@@ -84,6 +89,8 @@ type Transaction struct {
 	UpdatedAt         string            `json:"updated_at"`
 	Metadata          map[string]string `json:"metadata,omitempty"`
 	Customer          *SessionCustomer  `json:"customer,omitempty"`
+	// ProviderAccount is "default", or the alias of the PSP account that processed this payment.
+	ProviderAccount string `json:"providerAccount,omitempty"`
 }
 
 // ListTransactionsParams contains the query parameters for listing transactions.
@@ -124,6 +131,8 @@ type PaymentLink struct {
 	ExpiresAt    string            `json:"expires_at,omitempty"`
 	CreatedAt    string            `json:"created_at"`
 	Metadata     map[string]string `json:"metadata,omitempty"`
+	// ProviderAccount is "default", or the alias of the PSP account used for this link's payments.
+	ProviderAccount string `json:"providerAccount,omitempty"`
 }
 
 // CreatePaymentLinkParams contains the parameters for creating a payment link.
@@ -138,6 +147,8 @@ type CreatePaymentLinkParams struct {
 	MinAmount   *int              `json:"minAmount,omitempty"`
 	MaxAmount   *int              `json:"maxAmount,omitempty"`
 	VendorID    *string           `json:"vendorId,omitempty"`
+	// ProviderAccount is the alias of an additional PSP account. Omit or use "default" for the default account.
+	ProviderAccount *string `json:"providerAccount,omitempty"`
 	// IdempotencyKey is sent as the Idempotency-Key header if set.
 	IdempotencyKey string `json:"-"`
 }
