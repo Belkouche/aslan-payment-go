@@ -22,16 +22,16 @@ func (r *CustomersResource) List(ctx context.Context, params *ListCustomersParam
 			query["page"] = intToString(params.Page)
 		}
 		if params.PageSize != nil {
-			query["page_size"] = intToString(params.PageSize)
+			query["pageSize"] = intToString(params.PageSize)
 		}
 		if params.Search != nil {
 			query["search"] = *params.Search
 		}
 		if params.SortBy != nil {
-			query["sort_by"] = *params.SortBy
+			query["sortBy"] = *params.SortBy
 		}
 		if params.SortOrder != nil {
-			query["sort_order"] = *params.SortOrder
+			query["sortOrder"] = *params.SortOrder
 		}
 		if len(query) > 0 {
 			opts.query = query
@@ -50,6 +50,7 @@ func (r *CustomersResource) Retrieve(ctx context.Context, id string) (*Customer,
 	opts := r.client.requestOpts()
 	opts.method = "GET"
 	opts.path = "/api/v1/customers/" + url.PathEscape(id)
+	opts.unwrapData = true
 
 	var customer Customer
 	if err := doRequest(ctx, opts, &customer); err != nil {

@@ -16,6 +16,7 @@ func (r *PaymentLinksResource) Create(ctx context.Context, params *CreatePayment
 	opts := r.client.requestOpts()
 	opts.method = "POST"
 	opts.path = "/api/v1/payment-links"
+	opts.unwrapData = true
 	opts.body = params
 
 	if params.IdempotencyKey != "" {
@@ -34,6 +35,7 @@ func (r *PaymentLinksResource) Retrieve(ctx context.Context, id string) (*Paymen
 	opts := r.client.requestOpts()
 	opts.method = "GET"
 	opts.path = "/api/v1/payment-links/" + url.PathEscape(id)
+	opts.unwrapData = true
 
 	var link PaymentLink
 	if err := doRequest(ctx, opts, &link); err != nil {
@@ -54,7 +56,7 @@ func (r *PaymentLinksResource) List(ctx context.Context, params *ListPaymentLink
 			query["page"] = intToString(params.Page)
 		}
 		if params.PageSize != nil {
-			query["page_size"] = intToString(params.PageSize)
+			query["pageSize"] = intToString(params.PageSize)
 		}
 		if params.Status != nil {
 			query["status"] = *params.Status
@@ -76,6 +78,7 @@ func (r *PaymentLinksResource) Update(ctx context.Context, id string, params *Up
 	opts := r.client.requestOpts()
 	opts.method = "PATCH"
 	opts.path = "/api/v1/payment-links/" + url.PathEscape(id)
+	opts.unwrapData = true
 	opts.body = params
 
 	var link PaymentLink
@@ -99,6 +102,7 @@ func (r *PaymentLinksResource) GetQR(ctx context.Context, id string, params *QRC
 	opts := r.client.requestOpts()
 	opts.method = "GET"
 	opts.path = "/api/v1/payment-links/" + url.PathEscape(id) + "/qr"
+	opts.unwrapData = true
 
 	if params != nil {
 		query := make(map[string]string)
